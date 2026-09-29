@@ -2619,9 +2619,10 @@ impl RpcDispatcher {
             .map_err(|e| rpc_err(INTERNAL_ERROR, format!("Config save failed: {e}")))?;
         *self.ctx.config.write() = snapshot;
         // Authorization config may have changed (permission_profiles,
-        // users, oidc, security.trust_daemon_uid): recompile the policy
-        // so a new generation reaches established connections at their
-        // next privileged operation — no reconnect or restart.
+        // users, oidc, security.trust_daemon_uid, security.password_auth):
+        // recompile the policy so a new generation reaches established
+        // connections at their next privileged operation — no reconnect or
+        // restart.
         let refreshed = self.ctx.config.read().clone();
         // One accepted persistence, one revision. Both the save and this
         // publication happen under `config_write_lock`, so the revision is
@@ -7636,8 +7637,9 @@ impl RpcDispatcher {
     /// `config/set-many`: stage an ordered batch of `config/set` entries on
     /// one working copy and commit it with a single `save_and_swap_config`,
     /// so fields that are only valid together (a `[users.<name>]` entry's
-    /// `uid` and `permission_profiles`) can be authored without an invalid
-    /// intermediate state ever being checked, saved, or installed. Whatever
+    /// credential, `uid` or `password_hash`, and its `permission_profiles`)
+    /// can be authored without an invalid intermediate state ever being
+    /// checked, saved, or installed. Whatever
     /// commit-time checks `save_and_swap_config` performs run once, over the
     /// final state. An entry that fails to stage aborts the whole batch
     /// before anything is saved or swapped, and the error names its index.
@@ -12153,6 +12155,7 @@ mod tests {
             UserConfig {
                 principal_id: None,
                 uid: Some(uid),
+                password_hash: None,
                 permission_profiles: vec!["reader".into()],
             },
         );
@@ -12296,6 +12299,7 @@ mod tests {
             UserConfig {
                 principal_id: None,
                 uid: Some(4343),
+                password_hash: None,
                 permission_profiles: vec!["operator".into()],
             },
         );
@@ -12430,6 +12434,7 @@ mod tests {
                 UserConfig {
                     principal_id: None,
                     uid: Some(4343),
+                    password_hash: None,
                     permission_profiles: vec!["operator".into()],
                 },
             );
@@ -12757,6 +12762,7 @@ mod tests {
             UserConfig {
                 principal_id: None,
                 uid: Some(uid),
+                password_hash: None,
                 permission_profiles: vec!["cron-alpha".into()],
             },
         );
@@ -13111,6 +13117,7 @@ mod tests {
             UserConfig {
                 principal_id: None,
                 uid: Some(uid),
+                password_hash: None,
                 permission_profiles: vec!["session-scoped".into()],
             },
         );
@@ -16618,6 +16625,7 @@ mod tests {
             UserConfig {
                 principal_id: None,
                 uid: Some(4242),
+                password_hash: None,
                 permission_profiles: vec!["narrow".into()],
             },
         );
@@ -16681,6 +16689,7 @@ mod tests {
             UserConfig {
                 principal_id: None,
                 uid: Some(4242),
+                password_hash: None,
                 permission_profiles: vec!["selector-only".into()],
             },
         );
@@ -16791,6 +16800,7 @@ mod tests {
             UserConfig {
                 principal_id: None,
                 uid: Some(4242),
+                password_hash: None,
                 permission_profiles: vec!["principal-test".into()],
             },
         );
@@ -17548,6 +17558,7 @@ mod tests {
                 UserConfig {
                     principal_id: None,
                     uid: Some(uid),
+                    password_hash: None,
                     permission_profiles: vec!["member".into()],
                 },
             );
@@ -18094,6 +18105,7 @@ mod tests {
             UserConfig {
                 principal_id: None,
                 uid: Some(4444),
+                password_hash: None,
                 permission_profiles: vec!["admin".into()],
             },
         );
@@ -18238,6 +18250,7 @@ mod tests {
             UserConfig {
                 principal_id: None,
                 uid: Some(4444),
+                password_hash: None,
                 permission_profiles: vec!["admin".into()],
             },
         );
@@ -18751,6 +18764,7 @@ mod tests {
             UserConfig {
                 principal_id: None,
                 uid: Some(4444),
+                password_hash: None,
                 permission_profiles: vec!["admin".into()],
             },
         );
@@ -33048,6 +33062,7 @@ mod tests {
             UserConfig {
                 principal_id: None,
                 uid: Some(4242),
+                password_hash: None,
                 permission_profiles: vec!["admin".into()],
             },
         );
@@ -33061,7 +33076,7 @@ mod tests {
             ),
             (
                 json!({"prop": "users.bob.permission_profiles", "value": ["operator"]}),
-                "users.bob.uid is required",
+                "users.bob has no credential",
             ),
         ] {
             let response = rpc_roundtrip(&mut dispatcher, &mut rx, "config/set", entry).await;
@@ -34202,6 +34217,7 @@ mod tests {
             UserConfig {
                 principal_id: None,
                 uid: Some(uid),
+                password_hash: None,
                 permission_profiles: vec!["config-writer".into()],
             },
         );
@@ -34459,6 +34475,7 @@ mod tests {
             UserConfig {
                 principal_id: None,
                 uid: Some(uid),
+                password_hash: None,
                 permission_profiles: vec!["session-alpha".into()],
             },
         );
